@@ -1,0 +1,10 @@
+#!/bin/bash
+
+directory_path="/home/sairam/assignment"
+
+# Loop through all the files in the directory
+for file in $directory_path/*; do
+    if [[ -f "$file" ]]; then
+        echo "$(basename "$file")"
+    fi
+done

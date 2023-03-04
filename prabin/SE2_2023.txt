@@ -1,0 +1,225 @@
+#!/bin/bash
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# Author:			Prabin Kumar Sabat
+# Date Written:			24-02-2023
+# Platform Information:		GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu) 
+#				on Linux 5.19.0-32-generic
+# Purpose:			To Make a Course_Guessing_Game 
+#				for the Given CS-Assignment.
+# Concepts:			variables, user input,
+#				if-then-elif-else-fi, test, introductory bash
+#				scripting, basic linux commands
+# Brief Description:		This game focuses on asking questions to the student
+#				on who is teaching them and then
+#				figure out which course of study he belongs to.
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#What the assignment is about?
+# - The assignment talks about creating a script which determines the course name 
+#   for a student by asking him about which all teachers are teaching him.
+# - The courses are being offered by the university XUniv.
+# - Where the student can pursue basic science studies 
+#   or he can pursue interdisciplinary studies.
+
+# - The basic science course names are:
+# 	-- Pure Mathematics
+#	-- Physics
+#	-- Chemistry
+
+# - The interdisciplinary course names are:
+#	-- Mathematical Physics		=	Mathematics 	&	Physics
+#	-- Theoretical Chemistry	=	Mathematics 	&	Chemistry
+#	-- Physical Chemistry		=	Physics 	&	Chemistry
+#	-- Computational Science	=	Mathematics	&	Physics		&	Chemistry
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# What's The Process Is?
+#	- The code greets the user accroding to the time
+#	- It asks questions to the user to find out which all teachers
+#	  are teaching him.
+#	- Then taking all the values it determines whats the 
+#	  Course/Interdisciplinary_Course Name is.
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# Greeting Mechanism:
+
+## Logging system time in 24h-format,
+## also the day to use while greeting.
+current_hour=$(date +%H)
+day=$(date +%A)
+
+###This is to ensure that the system doesn't interpret the variable as a octal(base 8) number.
+if [[ ${current_hour:0:1} == "0" ]]
+	then
+	current_hour=${current_hour:1}
+fi
+
+#----------
+#Defines Time period(time) according to the system time.
+if [[ $current_hour -ge 5 ]] && [[ $current_hour -lt 12 ]]
+	then
+	time="morning"
+elif [[ $current_hour -ge 12 ]] && [[ $current_hour -lt 18 ]]
+	then
+	time="afternoon"
+else
+	time="evenining"
+fi
+
+#----------
+#Greeting the Student.
+if [[ $# -ne 1 ]]
+	then
+	echo " $0 usage: $0 name "
+	exit 1
+else
+	echo -e "\n $ \n Hi" ${1^}!!! "\n How are you doing this fine" ${day,} $time? "\n Hopefully you'r doing good!!"
+fi
+
+##
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# Asking questions
+
+## "\n" has been used in almost all of the echo commands.
+## That's only for a neat and clear output and does not serve any functionality in the code.
+
+#----------
+
+echo -e " Now, Let me guess by myself what's your course name is."
+echo -e "\n Please answer the following question in 'y/n', \n where 'y' stands for yes and 'n' for no. \n"
+
+#----------
+
+## Here 'read' command with -p has been used to output the prompt and take reading at the same time.
+## -e has been used to cover up the malfunction which -n nchar does when used alone.
+## when used alone -n char writes the next outputs on the same line.
+## where as -e was supposed to enable interpretation of escape sequences,
+## but it's not working like that(atleast in my bash).
+## Whereas use of -e somehow makes the next output to be written in the next line.
+## So I have used this combination in the rest of the script.
+## Here, -n char ensures that the user types only one char as input.
+## whereas the real usage is to consider only the first character of the input.
+
+#----------
+read -e -p " Do you attend classes of Prof. A?  " -n 1 a
+if [[ "${a,}" != "y" ]] && [[ "${a,}" != "n" ]]
+	then
+	echo " Please give input as 'y/n'."
+	read a
+fi
+#----------
+read -e -p " Do you attend classes of Prof. B?  " -n 1 b
+if [[ "${b,}" != "y" ]] && [[ "${b,}" != "n" ]]
+        then
+        echo " Please give input as 'y/n'."
+        read b
+fi
+#----------
+read -e -p " Do you attend classes of Prof. C?  " -n 1 c
+if [[ "${c,}" != "y" ]] && [[ "${c,}" != "n" ]]
+        then
+        echo " Please give input as 'y/n'."
+        read c
+fi
+#----------
+read -e -p " Do you attend classes of Prof. D?  " -n 1 d
+if [[ "${d,}" != "y" ]] && [[ "${d,}" != "n" ]]
+        then
+        echo " Please give input as 'y/n'."
+        read d
+fi
+#----------
+read -e -p " Do you attend classes of Prof. E?  " -n 1 e
+if [[ "${e,}" != "y" ]] && [[ "${e,}" != "n" ]]
+        then
+        echo " Please give input as 'y/n'."
+        read e
+fi
+#----------
+read -e -p " Do you attend classes of Prof. F?  " -n 1 f
+if [[ "${f,}" != "y" ]] && [[ "${f,}" != "n" ]]
+        then
+        echo " Please give input as 'y/n'."
+        read f
+fi
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+##The next few 'if' commands check which all subjects he is studying.
+if [[ $a == "y" ]] || [[ $b == "y" ]]
+	then
+	math="y"
+else
+	math="n"
+fi
+if [[ $c == "y" ]] || [[ $d == "y" ]]
+	then
+	phy="y"
+else
+	phy="n"
+fi
+if [[ $e == "y" ]] || [[ $f == "y" ]]
+	then
+	chem="y"
+else
+	chem="n"
+fi
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+##The next block of 'if-elif-else-fi' commands check all the subjects 
+##and 'echo' the probable course in which the user might be studying.
+
+if [[ $math == "n" ]] && [[ $phy == "n" ]] && [[ $chem == "n" ]]
+	then
+	echo -e "\n You don't belong to XUniv and here! \n If you'r kidding, please _DON'T_!"
+elif [[ $math == "y" ]]   && [[ $phy == "y" ]] && [[ $chem == "y" ]]
+	then
+	echo -e "\n Let me guess! \n You'r pursuing Computational Science. Am I Correct? "
+elif [[ $math == "y" ]] && [[ $phy == "y" ]]
+	then
+	echo -e "\n Let me guess! \n You'r pursuing Mathematical Physics. Am I Correct? "
+elif [[ $math == "y" ]] && [[ $chem == "y" ]]
+	then
+	echo -e "\n Let me guess! \n You'r pursuing Theoretical Chemistry. Am I Correct? "
+elif [[ $phy == "y" ]]  && [[ $chem == "y" ]]
+	then
+	echo -e "\n Let me guess! \n You'r pursuing Physical Chemistry. Am I Correct? "
+elif [[ $math == "y" ]]
+	then
+	echo -e "\n Let me guess! \n You'r pursuing Pure Mathematics. Am I Correct? "
+elif [[ $phy == "y" ]]
+	then
+	echo -e "\n Let me guess! \n You'r pursuing Physics. Am I Correct? "
+elif [[ $chem == "y" ]]
+	then
+	echo -e "\n Let me guess! \n You'r pursuing Chemistry. Am I Correct? "
+else
+	echo -e "\n I'm really sorry! \n Can u please report me what caused this secret error message to show up, in detail. \nAt:-prabincoc2@gmail.com"
+	exit 1
+fi
+#------------------------------------------------------------------------------------------------------------------------#
+
+## Wishes the user and asks if he wants to replay this script again.
+## If given 'y' the script uses the command `exec` to execute the script file again with the same argument.
+
+echo -e -n "\n Hopefully you have enjoyed this! \n Do you want to replay the guessing game again?  " 
+read -e -n 1 replay
+if [[ ${replay,} == "y" ]]
+	then
+	echo -e "\n\n\n\n\n \$--------------------------"
+	exec "$0" "$1"
+elif [[ ${replay,} == "n" ]]
+	then
+	echo -e "\n \$$ Thank you! \$$ \n We hope you will share this with your colleagues. :) :) :) \n $"
+fi
+exit 0
+
+#========================================================================================================================#

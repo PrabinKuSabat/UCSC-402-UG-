@@ -1,0 +1,20 @@
+#!/bin/bash
+if [[ $# -eq 1 ]] && [[ -f $1 ]]
+	then
+		filename=$1
+		set -- `ls -l $filename`
+		perms="$1"
+		size="$5"
+		set `ls -i $filename`
+		inode="$1"
+		echo "File Name:      $filename"
+		echo "Inode Number:   $inode"
+		echo "Permissions:    $perms"
+		echo "Size (bytes):   $size"
+		exit 0
+	else
+		echo "$0: 	specify exactly one command line argument that"
+		echo " 		must be an ordinary file." 
+		exit 1
+fi 
+exit 0

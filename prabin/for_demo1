@@ -1,0 +1,7 @@
+#!/bin/bash
+for people in Debbie Jamie JOh Kitty Kuhn Shah
+do
+	echo "$people"
+done
+exit 0
+

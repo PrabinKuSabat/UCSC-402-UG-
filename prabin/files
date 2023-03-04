@@ -1,0 +1,36 @@
+#!/bin/bash
+echo " Are you sure the backingup_directory and destination_directory have been specified properly?"
+read -e -p " Answer in y/n:  " -n 1 proceed
+echo $1
+echo $2
+dir_list=''
+if [ proceed=y ]; then
+	if [ -z $1 ] || [ -z $2 ]; then
+		echo " Error: Please Specify the Directories Properly."
+		echo " USAGE: $0 Backingup_Direcotry Destination_Directory "
+		exit 1
+	elif [ ! -d $1 ]; then
+		echo " USAGE: $0 Backingup_Directory Destination_Directory "
+	elif [ ! -d $2 ]; then
+		mkdir $2
+	fi
+	for file in $1/*; do
+		if [[ -f $file ]];
+			then
+			file_name=$(basename "$file")
+			echo "$file_name"
+			cp $file_name $2
+		elif [[ -d $file ]];
+			then
+			file_name=$(basename "$file")
+			dir_list=$dir_list' '$file_name
+			echo $dir_list "is a directory"
+		fi
+	done
+	for i in $dir_list; do
+		{
+			./files $1/$i $2/$i
+		}
+	done
+fi
+exit 0

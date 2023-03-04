@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# Author:			Prabin Kumar Sabat
+# Date Written:			24-02-2023
+# Platform Information:		GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu) 
+#				on Linux 5.19.0-32-generic
+# Purpose:			To back up files which were modified 
+#				during the given time by the user.
+# Concepts:			Chapters:- 1,2,3,4,6,12
+#				 - from the book LINUX the textbook 
+#				 - by Syed Mansoor Sarwar and Robert M. Koretsky
+# Brief description:		This script aims to backup each file 
+#				of a given `source_directory` 
+#				and copy the files newer than the provided time 
+#				into the `destination_directory`, using the `cp` command.
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#
+
+

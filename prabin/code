@@ -1,0 +1,8 @@
+#!/bin/bash
+
+while read line; do
+  if [[ "$line" =~ (verb|noun|adjective) ]]; then
+    echo "" >> output.txt
+  fi
+  echo "$line" >> output.txt
+done < list.txt
