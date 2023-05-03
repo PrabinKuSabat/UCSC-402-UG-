@@ -1,0 +1,18 @@
+#!/bin/bash
+declare -A file_list
+for file in $1/*;
+do
+	perm="$(stat -c%A $file)"
+	echo $perm
+	if [ -v file_list[$perm] ]; then
+		file_list[$perm]=($(file_list[$perm])+1)
+	elif [ ! -v file_list[$perm] ]; then
+		file_list[$perm]=0
+	fi
+done
+
+for key in "${!file_list[@]}";
+do
+	echo "$key ${file_list[$key]}"
+done
+

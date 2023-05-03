@@ -1,0 +1,123 @@
+#!/bin/bash
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# Author:			Prabin Kumar Sabat
+# Date Written:			24-02-2023
+# Platform Information:		GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu) 
+#				on Linux 5.19.0-32-generic
+# Purpose:			To back up files which were modified
+#				during the given time by the user.
+# Concepts:			Chapters:- 1,2,3,4,6,12
+#				 - from the book LINUX the textbook
+#				 - by Syed Mansoor Sarwar and Robert M. Koretsky
+# Brief description:		This script aims to backup each file and even the files inside directories
+#				of a given `source_directory`
+#				and copy the files newer than the provided time
+#				into the `destination_directory`, using the `cp` command.
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# Working Process:	      - It begins with checking the arguments
+#				if they are proper for the script or not.
+#				  	+ It creates an empty directory if it finds that the
+#				   	  Destination_Directory doesn't exist
+#				    	  and continues the backup process.
+#			      - It then goes on copying the normal files from the Source_Directory
+#				and if found a directory stores the file name in a variable dir_list
+#			      - If the dir_list is not empty then
+#				it runs a for loop which executes the same process
+#				with modified arguments in a subprocess
+#				which ensures that even the files inside the directories are also checked
+#				and they undergo the backup process.
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# The following commands check the arguments for the proper running of the script
+# if found not proper, then appropiate ERROR reports are generated with the USAGE.
+
+# Variables - What they represent
+#	$1  - Source_directory
+#	$2  - Destination_directory
+#	$3  - Duration
+#	$4  - Unit
+
+#----------
+
+## The expressions below check if the arguments are empty.
+if [ -z $1 ] || [ -z $2 ] || [ -z $3 ] || [ -z $4 ]; then
+	echo -e "\n USAGE: $0 Source_Directory Destination_Directory Duration Unit"
+	echo " Error: Please check the provided arguments."
+	exit 1
+## TIME Unit Checker
+elif [[ $4 != "hours" ]] && [[ $4 != "min" ]] && [[ $4 != "sec" ]] && [[ $4 != "days" ]]; then
+	echo " USAGE: $0 Source_Directory Destination_Directory Duration unit"
+	echo " Time should be written in duration Unit(with space included) format."
+	echo " Unit should be given as:- hours or min or sec or days"
+	exit 1
+## Source_Directory Checker
+elif [ ! -d $1 ]; then
+	echo -e "\n\n USAGE: $0 Source_Directory Destination_Directory Duration Unit"
+	echo -e " $1 is not a directory."
+	exit 1
+## If Destination_Directory not found creates one
+elif [ ! -d $2 ]; then
+	mkdir $2
+fi
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#	The following set of commands check the last modified time of the files
+# and the time period provided by the user.
+#   	If the file has been modified during the given time period,
+# the command cp copies it to the Destination_directory.
+#	Here the check_time variable stores the time in seconds since epoch
+# which is calculated by subtracting the current time with the time period provided by the user.
+# And the last modified time of a file is compared with this to check if that file was modified during the
+# the time period provided by the user.
+
+#----------
+
+##Few variables
+dir_list=''					#Used to ensure that dir_list starts empty for all sub-process
+check_time=$(date -d -$3$4 +%s)			#The time period given by the user
+
+for file in $1/*; do							# checks all the files in the source_directory
+	if [[ -f $file ]];
+		then
+		file_name=$(basename "$file")
+		file_mtime=$(stat -c %Y $file)
+		if [[ $file_mtime -ge $check_time ]]; then		# checks if modified in the given time period
+			cp $1/$file_name $2				# file is backed up
+			echo " Backing up successful of: $file"
+		fi
+	elif [[ -d $file ]];
+		then
+		dir_name=$(basename "$file")
+		dir_mtime=$(stat -c %Y $dir_name)
+		if [[ $dir_mtime -ge $check_time ]]; then		# checks if modified in the given time period
+			dir_list=$dir_list' '$dir_name			# adds that dir name to dir_list
+		fi
+	fi
+done
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# If any directories has been modified in the given time_period then the following code runs this script file
+# with appropiate changes in the arguments
+
+#----------
+
+if [[ dir_list != '' ]]; then
+	for i in $dir_list; do
+		{							# creates a subprocess
+			echo -e "\n\n >>>Backing up files from directory: $i"
+			./files $1/$i $2/$i $3 $4			#runs the same script in a subprocess
+		}
+	done
+fi
+exit 0
+
+#========================================================================================================================#
+
+#							!!!SAIRAM!!!

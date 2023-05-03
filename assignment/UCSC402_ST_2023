@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#Question:-
+# Mr ABC follows a strict journal to keep track of his week’s agenda. Refer the current agenda.txt
+# document to know the format. There is the day of the week, say Monday, and each of the following
+# lines unƟl the next day of week (Tuesday) is a point of the agenda for Monday. Implement a bash
+# script for the following three funcƟonaliƟes.
+
+#1. [7M] Procure the agenda for a given day of the week.
+#2. [5M] Include a new agenda point for a given day of the week.
+#3. [3M] Back up the agenda in a different backup doc named accordingly in the current working
+#   directory itself.
+
+#Submitted By:-	Prabin Kumar Sabat
+#Reg. No.:-	211220
+#Class:-	2nd B.Sc.(MCS)
+#Subject Code:-	UCSC-402
+
+#------------------------------------------------------------------------------------------------------------------------#
+# 1. Procure the agenda for a given day of the week.
+
+agenda()
+{
+read -e -p " Enter the day: " day
+start = grep -n ^'$day' trial | cut -f1 -d:
+#end = awk 'NR==$start if {print
+#awk 'NR==$start NR==
+}
+
+newagenda()
+{
+ read -e -p " Enter the day: " day
+ read -e -p " Enter the agenda for this day:" agenda
+ start=$(grep -i -n "^$day" $1 | cut -f1 -d:)
+ e=$((++start))
+ sed -i "$e i $agenda" $1
+}
+suffix()
+{
+        local name="$1.backup"
+        if [ -e "$name" ]; then
+                printf "%s" "$name"
+        else
+                local -i num=2
+                while [ -e "$name$num" ]; do
+                        num=num+1
+                done
+                printf "%s" "$name$num"
+        fi
+}
+
+backup()
+{
+mv "$1" "$(suffix "$1")"
+}
+
+
+while getopts "aebh" opt; do
+        case $opt in
+        a)
+                agenda $1
+		;;
+        e)
+                newagenda $2
+        	;;
+	b)
+		suffix $2
+		backup $2
+		;;
+	h)
+		usage
+		;;
+	esac
+done

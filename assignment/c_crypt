@@ -1,0 +1,325 @@
+#!/usr/bin/env bash
+
+#Name:- 	Prabin Kumar Sabat
+#Reg. NO.:-	211220
+#Class:-	B.Sc.(MCS)
+#Task:-		To Read, understand and comment on a Bash Script.
+
+#========================================================================================================================#
+
+####THIS IS THE BEGINNING OF THE SCRIPT FILE####
+
+# Author: Alexander Epstein https://github.com/alexanderepstein
+
+currentVersion="1.23.0" 	#@pk: This variable stores the current version value of the file
+state=""			#@pk: It stores the state values, which comes handy in different functions later on.
+configuredClient=""		#@pk: This records which http get tool is available in the system
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#@pk: This function checks if the command openssl is installed in the system
+checkOpenSSL()
+{
+  if  ! command -v openssl &>/dev/null; then				#@pk: &>/dev/null ensures that no error report 
+									#	form the check is displayed on the screen.
+    echo "Error: to use this tool openssl must be installed" >&2	#@pk: >&2 ensures that the error message is streamed
+									#	into the existing error stream.
+    return 1								#@pk: Denotes occurence of error
+  else
+    return 0								#@pk: Denotes successful run of the function
+  fi
+}
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#@pk: Used to check internet connection
+#	> /dev/null is used to output all the output of the command to the null file
+#	and 2>&1 ensures that if any error report is there then it is directed to the output stream, i.e. the null file.
+#@pk:	|| is the -or operator and if the httpGet command doesn't work
+#	the echo commands streams the error message through the error output stream,
+#	and the function exits with 1 as return, which denotes the occurence of error.
+checkInternet()
+{
+  httpGet github.com > /dev/null 2>&1 || { echo "Error: no active internet connection" >&2; return 1; } # query github with a get request
+}
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#@pk: This function determines which http get tool the system has installed and returns an error if there isnt one.
+#	command -v tool_name &>/dev/null checks whether that tool is installed or not
+#	and  streams all the error reports to the null file.
+#@pk:	if the tool is found to be available, it is then used as the value for the configuredClient variable.
+#@pk:	Else if none of the tools are found an error message, which lists the tools required by the code,
+#	is streamed to the error output stream.
+
+getConfiguredClient()
+{
+  if  command -v curl &>/dev/null; then
+    configuredClient="curl"
+  elif command -v wget &>/dev/null; then
+    configuredClient="wget"
+  elif command -v http &>/dev/null; then
+    configuredClient="httpie"
+  elif command -v fetch &>/dev/null; then
+    configuredClient="fetch"
+  else
+    echo "Error: This tool requires either curl, wget, httpie or fetch to be installed." >&2	#@pk: Error Message
+    return 1
+  fi
+}
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+## Allows to call the users configured client without if statements everywhere
+#@pk:	The next function uses the case esac statement to run the httpGet request function,
+#	based on the case, i.e., the value of the "configuredClient variable".
+#`	$@ is equal to all the command line arguments in one single value.
+httpGet()
+{
+  case "$configuredClient" in		#@pk:	case statement begins(considers the value of configuredClient variable)
+    curl)  curl -A curl -s "$@" ;;	#	'-A curl' sets the user-Agent header to curl, -s silences the output
+    wget)  wget -qO- "$@" ;;		#@pk:	-q is equivalent to --quitet, which turns off wget's outputs
+					#	`-0 file_name` concatenates the content to a single file, 
+					#	and - stands for standard output in place of the file_name.
+    httpie) http -b GET "$@" ;;		#@pk:	-b is for displaying only the response body,
+					#	GET specifies that the HTTP method be GET
+    fetch) fetch -q "$@" ;;		#@pk:	-q silences the output
+  esac
+}
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+## uses openssl aes 256 cbc encryption to encrypt file salting it with password designated by user
+encrypt()
+{
+  echo "Encrypting $1..."		#@pk:	To ensure the user that the process of encryption has begined.
+  openssl enc -aes-256-cbc -salt -a -in "$1" -out "$2" || { echo "File not found"; return 1; }
+					#@pk:	uses openssl toolkit's enc command to encrypt, decrypt or encode.
+					#@pk:	-salt is used to generate a randomly generated hex digits, which is added
+					#	to the text before encryption to provide a extra layer of protection.
+					#@pk:	-a ensures that the ouput data is base64-encoded.
+					#@pk:	-in "$1"  provide the input file and -out "$2" the output file to the command.
+					#@pk:	if the command fails because of unavailability of file,
+					#	then File not found error message is echoed and error is returned.
+  echo "Successfully encrypted"		#@pk:	Ensures the user that the process has completed successfully.
+}
+
+#----------
+
+## uses openssl aes 256 cbc decryption to decrypt file
+#@pk:	is similar to the above, just it's purpose is different that is to decrypt the input file.
+#@pk:	-e(i.e., encrypt) is default, and inorder to decrypt we are specifically using the option -d to decrypt.
+decrypt()
+{
+  echo "Decrypting $1..."
+  openssl enc -aes-256-cbc -d -a -in "$1" -out "$2" || { echo "File not found"; return 1; }
+  echo "Successfully decrypted"
+}
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+update()
+{
+  # Author: Alexander Epstein https://github.com/alexanderepstein
+  # Update utility version 2.2.0
+  # To test the tool enter in the defualt values that are in the examples for each variable
+  repositoryName="Bash-Snippets" #Name of repostiory to be updated ex. Sandman-Lite
+  githubUserName="alexanderepstein" #username that hosts the repostiory ex. alexanderepstein
+  nameOfInstallFile="install.sh" # change this if the installer file has a different name be sure to include file
+				 # extension if there is one
+  latestVersion=$(httpGet https://api.github.com/repos/$githubUserName/$repositoryName/tags | grep -Eo '"name":.*?[^\\]",'| head -1 | grep -Eo "[0-9.]+" ) 
+				#always grabs the tag without the v option
+	#@pk:	uses httpGet to get the tags file from the github repo
+	#	and then uses grep to find only the matching parts of the lines using EREs.
+	#	-E stands for allowing use of extended regex
+	#	and -o for printing only the matched part of the line.
+	#	The regex used with the first grep command is looking for the part having "name":	"v__.__.__",
+	#	the .*? matches any number of characters, and ? after * ensures that only the shortest matching string,
+	#	in between : and "(closing double quote),is selected.
+	#	[^\\]" ensures that "(closing double quote) escaped with \ doesn't get selected. Which is legal in json.
+	#	, is the normal text ',' and doesn't have any special meaning.(The required string ends with ,)
+	#	Head -1 removes the v from the name.
+	#	the next grep command selects only the version number removing everything else.
+  if [[ $currentVersion == "" || $repositoryName == "" || $githubUserName == "" || $nameOfInstallFile == "" ]]; then
+    echo "Error: update utility has not been configured correctly." >&2
+    exit 1			#@pk:	checks if all the variables currentVersion, repositoryName, githubUserName,
+				#	and nameOfInstallFile has a value,
+				#	if not it streams out an error messsage to the error stream.
+				#	and then exits with 1(denotes Error)
+  elif [[ $latestVersion == "" ]]; then
+    echo "Error: no active internet connection" >&2
+    exit 1			#@pk:	Checks if the latestVersion number has been updated from the git repos using
+				#	httpGet,and if the variable is empty an error report is streamed through the
+				#	error output stream and it exits with 1(denotes Error).
+
+  else				#@pk: 	If all the variables checked above are ready the below set of commands run.
+    if [[ "$latestVersion" != "$currentVersion" ]]; then	#@pk: 	Checks if the latest and current version are not equal.
+      echo "Version $latestVersion available"			#	If they are not, It echos the availability of the latestVersion.
+      echo -n "Do you wish to update $repositoryName [Y/n]: "	#	Asks if to proceed with the update.
+      read -r answer						#	Reads the user input
+      if [[ "$answer" == [Yy] ]]; then
+        cd ~ || { echo 'Update Failed'; exit 1; }
+		#@pk:	if executable permission for home dir is not available, update fails and exits with 1.
+        if [[ -d  ~/$repositoryName ]]; then rm -r -f $repositoryName || { echo "Permissions Error: try running the update as sudo"; exit 1; } ; fi
+		#@pk:	if a directory with the same repository name exists, the olderversion is removed.
+		#	and if write permission is not available, an message is showed asking to run the update as sudo.
+		#	and function exits with 1.
+        echo -n "Downloading latest version of: $repositoryName."	#@pk:	Reports the beginning of download.
+        git clone -q "https://github.com/$githubUserName/$repositoryName" && touch .BSnippetsHiddenFile || { echo "Failure!"; exit 1; } &
+		#@pk:	clones the repo silently, and updates the time stamp of the .BSnippetsHIddenFile,
+		#	or creates a new file with that name if it doen't exist.
+		#	if the above functionality doesnot complete, the function gives a "Failure!"" message and exits with 1.
+        while [ ! -f .BSnippetsHiddenFile ]; do { echo -n "."; sleep 2; };done
+		#@pk:	a dot is echoed every 2 seconds until the .BSnippetsHiddenFile is not formed.
+		#	If the cloning takes time, this ensures the user that the process is still running, and is not silent.
+        rm -f .BSnippetsHiddenFile	#@pk:	Removes the .BSnippetsHiddenFile once the cloning is done.
+        echo "Success!"			#	Sends a message marking the completion of the cloning process.
+        cd $repositoryName || { echo 'Update Failed'; exit 1; }	
+					#@pk:	If the repo directory is not formed, 
+					#	'update failure' message is displayed, and function exits with 1.
+        git checkout "v$latestVersion" 2> /dev/null || git checkout "$latestVersion" 2> /dev/null || echo "Couldn't git checkout to stable release, updating to latest commit."
+		#@pk:	Checks for the stable release using git checkout command, and version tag with v and without v.
+		#	If check fails, a error message is echoed with stating that
+		#	the updating will take place with the latest commit.
+        chmod a+x install.sh #this might be necessary in your case but wasnt in mine.
+		#@pk:	This means executable acess for install.sh for all.
+		#	This might be unsafe when it comes to unchecked codes.
+		#	$nameOfInstallFile could have been used instead of install.sh,
+		#	as it is the variable being used for the install file name.
+        ./$nameOfInstallFile "update" || exit 1
+		#@PK:	Executes the install file with update argument, if the execute permssion is not there,
+		#	the function exits with 1.
+        cd ..	#	Moves to the parent directory of the repo file.
+        rm -r -f $repositoryName || { echo "Permissions Error: update succesfull but cannot delete temp files located at ~/$repositoryName delete this directory with sudo"; exit 1; }
+		#@pk:	Removes the temporary file repo file. If write permission  is not available,
+		#	an error message with instruction is echoed.
+      else
+        exit 1	#If the answer is something else than Y/y, then the update function exits with 1(without completion).
+      fi
+    else
+      echo "$repositoryName is already the latest version"
+		#@pk:	If latestVersion is equal to currentVersion, a message stating the same is echoed.
+    fi
+  fi
+}
+#@pk: 	completion of the update function.
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+#@pk:	The under text stores the usage function content, which shows the usage of this Bash script.
+#	cat <<EOF is used to initiate a here-document, which stores multi-line text, and prints using cat.
+#	EOF is treated as a delimiter here, and anything inbetween the two EOF is treated as string.
+usage()
+{
+  cat <<EOF
+Crypt
+Description: A wrapper around openssl that facilitates encrypting and decrypting files.
+Usage: crypt [flag] [inputFile] [outputFile]
+  -e  Encrypt the inputFile and store it in the outputFile
+  -d  Decrypt the inputFile and store it in the outputFile
+  -u  Update Bash-Snippet Tools
+  -h  Show the help
+  -v  Get the tool version
+Examples:
+  crypt -e mySecretFile.txt myEncryptedFile.jpg (change filetype so default program is incorrect)
+  crypt -d myEncryptedFile.jpg thisIsNowDecrypted.txt (change filetype back so now default program is correct)
+EOF
+}
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+checkOpenSSL || exit 1		#@pk:	Checks if the tool kit OpenSSL is installed in the system or not.
+				#	Otherwise exits with 1.
+				#	A error message could have been added here to convey it.
+				#	OpenSSL is required for encoding and decoding files.
+#------------------------------------------------------------------------------------------------------------------------#
+
+while getopts "huve:d:" opt; do 		#@pk:	allows usage of options for a Bash script.
+  case $opt in					#	Marks the beginning of the conditional statement
+    e)  ## when trying to encrypt run this	#	If the given opt is e
+        if [[ $state != "decrypt" ]]; then	#	Checks if the file already has an state value, to ensure that
+						#	the encryption and decryption commands are not used together.
+          state="encrypt"			#	Changes state of the file to encrypt
+        else
+          echo "Error: the -d and -e options are mutally exclusive" >&2
+          exit 1				#@pk:	Gives an error report is streamd stating that both -d and -e can't be
+						#	used together, and the fun exits with 1.
+        fi
+        if [[ $# -ne 3 ]]; then			#@pk:	If the number of arguments is not equal to 3
+          echo "Option -e needs and only accepts two arguments [file to encrypt] [output file]" >&2
+          exit 1				#@pk:	An error report stating the usage of the command is streamed,
+						#	also the fun exits with 1.
+        fi
+        ;;					#@pk:	marks the ending of the condition.
+    \?) echo "Invalid option: -$OPTARG" >&2	#@pk:	If any other option is used than the available ones,
+						#	an error message with the available options is streamed 
+						#	through error output. And the fun exits with 1.
+        exit 1
+        ;;
+    d)  ## when trying to decrypt run this
+        if [[ $state != "encrypt" ]]; then	#@pk:	Same functionality as option e.
+          state="decrypt"
+        else
+          echo "Error: the -e and -d options are mutally exclusive" >&2
+          exit 1
+        fi
+        if [[ $# -ne 3 ]]; then
+          echo "Option -d needs and only accepts two arguments [file to decrypt] [output file]" >&2
+          exit 1
+        fi
+        ;;
+    u)  getConfiguredClient || exit 1		#@pk:	Checks for the available http get tool, otherwise if the
+						#	function getConfiguredClient doesn't function properly,
+						#	the process exits with 1.
+        checkInternet || exit 1			#@pk:	Checks for internet using the above defined function,
+						#	in case of failure exits with 1.
+        update					#	Updates the script.
+        exit 0					#	Exits with 0(success).
+        ;;
+    h)  usage					#@pk:	Runs the usage function(defined above)
+        exit 0					#	Exits with 0.
+        ;;
+    v)  echo "Version $currentVersion"		#@pk:	Echoes the current version of the script.
+        exit 0					#	Exits with 0.
+        ;;
+    :)  ## will run when no arguments are provided to to e or d options
+        echo "Option -$OPTARG requires an argument." >&2	#@pk:	Works as commented by the authord
+        exit 1							#	Exits with 1
+        ;;
+  esac						#@pk:	Marks the ending of the conditional statement.
+done
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+if [[ $# == 0 ]]; then			#@pk:	If the number of arguments given is 0, usage of the script is shown.
+  usage
+  exit 0
+elif [[ $1 == "update" ]]; then		#@pk:	If argument is update, the all the required functions for update is called.
+  getConfiguredClient || exit 1
+  checkInternet || exit 1
+  update || exit 1
+  exit 0
+elif [[ $1 == "help" ]]; then		#@pk:	If argument is help, the usage of the script is displayed.
+  usage
+  exit 0
+elif [[ $state == "encrypt" ]]; then	#@pk:	If option is -e, then the encrypt function is run with required arguments.
+  encrypt "$2" "$3" || exit 1
+  exit 0
+elif [[ $state == "decrypt" ]]; then
+  decrypt "$2" "$3" || exit 1		#@pk:	If option is -d, then the decrypt function is run with required arguments.
+  exit 0
+fi
+
+#------------------------------------------------------------------------------------------------------------------------#
+
+# @pk:
+# Overview-
+# The script begins with defining the required independent variables, and then goes on defining the required functions.
+# It then defines the update function, which primarily updates the package, but does hectic secondary silent jobs like
+# calling the required variables, checking file permissions and internet access, removing the old and temporary files.
+# Checks the availability of the OpenSSL toolkit, defines the different actions for different options, and at the end
+# defines the different functionality to carry out for different arguments given.
+
+#========================================================================================================================#
+
+							#___SAIRAM___#

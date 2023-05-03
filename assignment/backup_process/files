@@ -1,0 +1,49 @@
+#!/bin/bash
+
+if [ -z $1 ] || [ -z $2 ] || [ -z $3 ] || [ -z $4 ]; then
+	echo -e "\n USAGE: $0 Source_Directory Destination_Directory Duration Unit"
+	echo " Error: Please Specify the Directories, the duration and unit Properly."
+	exit 1
+elif [[ $4 != "hours" ]] && [[ $4 != "min" ]] && [[ $4 != "sec" ]] && [[ $4 != "days" ]]; then
+	echo " USAGE: $0 Source_Directory Destination_Directory Duration unit"
+	echo " Time should be written in duration Unit(with space included) format."
+	echo " Unit should be given as:- hours or min or sec or days"
+	exit 1
+elif [ ! -d $1 ]; then
+	echo -e "\n\n USAGE: $0 Source_Directory Destination_Directory Duration Unit"
+	echo -e " $1 is not a directory."
+	exit 1
+elif [ ! -d $2 ]; then
+	mkdir $2
+fi
+
+dir_list=''
+check_time=$(date -d -$3$4 +%s)
+
+for file in $1/*; do
+	if [[ -f $file ]];
+		then
+		file_name=$(basename "$file")
+		file_mtime=$(stat -c %Y $file)
+		if [[ $file_mtime -ge $check_time ]]; then
+			cp $1/$file_name $2
+			echo " Backing up successful of: $file"
+		fi
+	elif [[ -d $file ]];
+		then
+		dir_name=$(basename "$file")
+		dir_mtime=$(stat -c %Y $dir_name)
+		if [[ $dir_mtime -ge $check_time ]]; then
+			dir_list=$dir_list' '$dir_name
+		fi
+	fi
+done
+if [[ dir_list != '' ]]; then
+	for i in $dir_list; do
+		{
+			echo ">>>Backing up files from directory: $i"
+			./files $1/$i $2/$i $3 $4
+		}
+	done
+fi
+exit 0
